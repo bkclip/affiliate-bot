@@ -1,20 +1,38 @@
 name: Generate Affiliate Video
+
 on:
   schedule:
-    - cron: "0 1 * * *"   # jam 08:00 WIB tiap hari
-  workflow_dispatch:        # supaya bisa dijalankan manual juga
+    - cron: "0 1 * * *"     # jam 08:00 WIB (UTC+7)
+  workflow_dispatch: {}      # supaya bisa dijalankan manual dari tab Actions
+
+permissions:
+  contents: write
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - run: pip install -r requirements.txt
-      - run: python script.py
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Jalankan bot
+        run: python script.py
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           JSON2VIDEO_API_KEY: ${{ secrets.JSON2VIDEO_API_KEY }}
-          GDRIVE_CREDENTIALS: ${{ secrets.GDRIVE_CREDENTIALS }}
+
+      - name: Commit hasil ke repo
+        run: |
+          git config user.name "affiliate-bot"
+          git config user.email "bot@example.com"
+          git add products.csv output/hasil_terbaru.json
+          git commit -m "Update hasil video $(date +'%Y-%m-%d')" || echo "Tidak ada perubahan"
+          git push
